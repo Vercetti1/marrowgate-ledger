@@ -29,7 +29,7 @@ export const BRIEFING = {
   city: 'Marrowgate',
   lines: [
     'A body was pulled out from under Pier 9 in the Old Harbour district of Marrowgate on the morning of 14 November 2025.',
-    'The Constabulary has given you the case file — the whole city, as a database — and nothing else.',
+    'The Constabulary has given you the case file: the whole city, as a database, and nothing else.',
     'Everything you need is in there. Start with the crime scene report.',
   ],
 } as const
@@ -88,7 +88,7 @@ export async function accuse(
   if ((await answerHash(guess)) !== expectedHash) return { correct: false }
 
   const plaintext = await unseal(guess, payload)
-  if (!plaintext) throw new Error('The seal is damaged — could not read the next act.')
+  if (!plaintext) throw new Error('The seal is damaged, could not read the next act.')
 
   const { personId, transcript } = JSON.parse(plaintext) as {
     personId: number

@@ -53,7 +53,7 @@ export const OPENING: Line[] = [
   {
     speaker: 'vance',
     text:
-      'You get exactly what I get. The file, and the whole of Marrowgate in that machine — every licence, every club door, every telephone call anyone made this autumn.',
+      'You get exactly what I get. The file, and the whole of Marrowgate in that machine: every licence, every club door, every telephone call anyone made this autumn.',
   },
   {
     speaker: 'vance',
@@ -64,7 +64,7 @@ export const OPENING: Line[] = [
   {
     speaker: 'vance',
     text:
-      'Then a guilty man hears we were looking, and walks onto a boat. Be sure. The records don’t lie — people do.',
+      'Then a guilty man hears we were looking, and walks onto a boat. Be sure. The records don’t lie. People do.',
   },
 ]
 
@@ -81,7 +81,7 @@ export const WRONG_ACCUSATION: Record<'killer' | 'mastermind', Line[][]> = {
       {
         speaker: 'vance',
         text:
-          'That’s a name, not a case. Bring me the record that says so — the plate, the membership, both at once.',
+          'That’s a name, not a case. Bring me the record that says so: the plate, the membership, both at once.',
       },
     ],
     [
@@ -97,7 +97,7 @@ export const WRONG_ACCUSATION: Record<'killer' | 'mastermind', Line[][]> = {
       {
         speaker: 'vance',
         text:
-          'She’s not your paymaster. Vole gave you three things about her — read them again, and make the records agree with all three.',
+          'She’s not your paymaster. Vole gave you three things about her. Read them again, and make the records agree with all three.',
       },
     ],
     [
@@ -122,7 +122,7 @@ export const AFTER_CONFESSION: Line[] = [
   {
     speaker: 'vance',
     text:
-      'So he was paid. That makes him the hand, not the reason — and I do not close a file on a hand.',
+      'So he was paid. That makes him the hand, not the reason, and I do not close a file on a hand.',
   },
   {
     speaker: 'vance',

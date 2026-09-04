@@ -51,12 +51,12 @@ export const INTERVIEWS = {
   witnessAddress: [
     'I walk the dog along the water at midnight, rain or no rain.',
     'A man came up off the pier steps in a hurry and went towards the ferry terminal.',
-    'He had a rowing club kit bag over his shoulder — the platinum-tier sort, they have the crest stitched in gold thread.',
+    'He had a rowing club kit bag over his shoulder, the platinum-tier sort, they have the crest stitched in gold thread.',
     'I never saw his face. He got into a dark saloon and the plate had K7Q in it. I am certain of the K7Q.',
   ].join(' '),
   witnessClub: [
     'I was locking up the club that night. A man let himself in past eleven to use the showers.',
-    'His membership number began with 4B — I remember because the card reader chirped twice.',
+    'His membership number began with 4B. I remember because the card reader chirped twice.',
     'Enormously tall, well over six foot, and soaked through.',
     'He went out the side door in a state and never swiped back out, which the system hates.',
   ].join(' '),
@@ -65,9 +65,9 @@ export const INTERVIEWS = {
 /** Sealed with the killer's name. Unlocked by a correct Act I accusation. */
 export const CONFESSION = [
   'I did it, and I was paid to do it.',
-  'A woman found me at the Gilded Anchor on the ninth. Red hair, a shade under five foot eight, and she drove a Volvo estate — I watched her park it badly.',
+  'A woman found me at the Gilded Anchor on the ninth. Red hair, a shade under five foot eight, and she drove a Volvo estate. I watched her park it badly.',
   'She wanted the ledger case and nothing else. She said Renwick had been reading columns that were not his to read.',
-  'She never gave a name. She only bragged that she had not missed a single one of the Symphony’s autumn recitals — all four of them, front row.',
+  'She never gave a name. She only bragged that she had not missed a single one of the Symphony’s autumn recitals. All four of them, front row.',
   'She telephoned me three times that week from the same number, and I have not heard from her since.',
 ].join(' ')
 
@@ -88,7 +88,7 @@ export const HINTS: ReadonlyArray<{ stage: 'killer' | 'mastermind'; ordinal: num
   {
     stage: 'killer',
     ordinal: 2,
-    text: `"The last house on the street" means the highest address_number for that address_street_name. Watch the apostrophe in Cobbler's Row — inside a SQL string you double it: 'Cobbler''s Row'.`,
+    text: `"The last house on the street" means the highest address_number for that address_street_name. Watch the apostrophe in Cobbler's Row. Inside a SQL string you double it: 'Cobbler''s Row'.`,
   },
   {
     stage: 'killer',
@@ -113,7 +113,7 @@ export const HINTS: ReadonlyArray<{ stage: 'killer' | 'mastermind'; ordinal: num
   {
     stage: 'mastermind',
     ordinal: 2,
-    text: 'Three physical details go to drivers_licence: hair_colour, height_cm, car_make. "A shade under five foot eight" is about 171 cm — allow yourself a centimetre either side.',
+    text: 'Three physical details go to drivers_licence: hair_colour, height_cm, car_make. "A shade under five foot eight" is about 171 cm, so allow yourself a centimetre either side.',
   },
   {
     stage: 'mastermind',

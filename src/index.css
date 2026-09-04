@@ -115,13 +115,25 @@ body,
 
 body {
   margin: 0;
-  /* The shell is a fixed-height app; every pane scrolls internally. */
+  /* The game is a fixed-height app shell; every pane scrolls internally. */
   overflow: hidden;
   background: var(--color-ink-950);
   color: var(--color-ink-100);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * The landing page is an ordinary document, not an app shell, so it opts back
+ * into normal page scrolling — native scroll restoration, working anchors, and
+ * address-bar hiding on mobile, none of which an inner scroll container gets.
+ */
+html:has(> body.doc-scroll),
+body.doc-scroll,
+body.doc-scroll #root {
+  height: auto;
+  overflow: visible;
 }
 
 /* --- Desk ---------------------------------------------------------------- */
