@@ -1,0 +1,5 @@
+# The database is a generated artefact, so the build must run db:generate.
+# `vite build` alone deploys the game without a case file.
+[build]
+  command = "npm run build"
+  publish = "dist"
