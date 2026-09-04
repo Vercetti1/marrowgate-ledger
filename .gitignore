@@ -1,0 +1,9 @@
+node_modules
+dist
+*.local
+.DS_Store
+.vite
+
+# Build artefacts, both reproduced by `npm run db:generate`.
+public/marrowgate.db
+public/sql-wasm.wasm
