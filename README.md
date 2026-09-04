@@ -87,7 +87,34 @@ confession the player has already earned — so `CaseDatabase` records every wri
 the game makes and replays it against the fresh worker. Cancelling a runaway
 query costs you nothing.
 
-### 4. Autocomplete comes from the actual database
+### 4. The story is played, not printed
+
+Early on the whole thing looked like a code editor with a plot stapled to the
+side, which is the wrong answer for a murder mystery. The presentation is now
+built around two ideas.
+
+**Two materials.** The case file is paper — warm, ruled, typed in Courier, and
+rubber-stamped when an act closes. The query side is ink and brass inside faux
+desktop window chrome. A physical dossier next to a police terminal, on one
+desk. The window's traffic lights are `aria-hidden` ornaments rather than
+controls wired to fake behaviour, because a control that looks real and does
+nothing is worse than an ornament that admits it.
+
+**A dialogue box.** Story beats play through a visual-novel box: Insp. Vance
+hands you the case, rebukes a bad charge, and Cassian Vole delivers his own
+confession in his own voice. The confession still arrives from the sealed
+payload in the database and is only turned into dialogue once it is unlocked, so
+the narrative layer holds no spoilers either.
+
+Two details worth the words. The typewriter derives its character count from
+elapsed time rather than accumulating one per tick — a per-character
+`setInterval` silently loses to render cost, and a `requestAnimationFrame` loop
+stops dead in a hidden tab, so a player who switched away mid-scene would come
+back to a frozen line. And the charge sheet reports nothing itself: it takes the
+name and closes, because a native `<dialog>` renders in the top layer and would
+have covered the scene playing underneath it. Outcomes have one home.
+
+### 5. Autocomplete comes from the actual database
 
 The worker reads `sqlite_master` and `PRAGMA table_info` on boot and hands the
 schema back to the client, which feeds it to both the schema browser and
@@ -100,8 +127,10 @@ step with the data, because they *are* the data.
 |---|---|
 | Language | TypeScript, `strict` |
 | UI | React 19, Tailwind CSS v4 |
-| Editor | CodeMirror 6 (`@codemirror/lang-sql`, SQLite dialect) |
+| Editor | CodeMirror 6 (`@codemirror/lang-sql`, SQLite dialect, custom theme) |
 | Database | SQLite via sql.js (WebAssembly), in a module Web Worker |
+| Type | Playfair Display, Courier Prime, JetBrains Mono, Inter |
+| Motion | CSS keyframes only — no animation library |
 | Build | Vite 8 |
 | Tests | Vitest, plus the generator's own assertions |
 
@@ -139,8 +168,17 @@ src/
   lib/db.worker.ts      sql.js, schema introspection, row-capped queries
   lib/db.ts             worker client: request routing, cancel, write replay
   game/case.ts          reading the case out of the database, accusation checking
-  game/useCaseFile.ts   game state, progress persistence
-  components/           editor, results grid, schema browser, case file, accusation
+  game/dialogue.ts      speakers and the static script (no spoilers)
+  game/useCaseFile.ts   game state, progress persistence, scene triggers
+  components/
+    DialogueBox.tsx     visual-novel box: typewriter, queue, skip
+    Window.tsx          faux desktop window chrome
+    CaseFilePanel.tsx   the paper dossier
+    SchemaPanel.tsx     register of holdings
+    QueryEditor.tsx     CodeMirror surface
+    editorTheme.ts      brass-on-ink syntax theme
+    ResultsGrid.tsx     row-capped, staggered results table
+    AccusationDialog.tsx  the charge sheet
 ```
 
 `scripts/data/case.ts` holds the solution and is imported only by the generator,
@@ -150,4 +188,6 @@ so it never reaches the browser.
 
 - Move the results grid to virtualised rows; it currently caps at 2,000.
 - Code-split CodeMirror, which is most of the 210 kB gzipped bundle.
+- Self-host the four typefaces instead of hitting Google Fonts.
+- Character portraits in the dialogue box; the monogram plates are a stand-in.
 - A second case, to find out how much of the generator is actually reusable.

@@ -1,13 +1,35 @@
 import { useMemo, useState } from 'react'
 import { AccusationDialog } from './components/AccusationDialog'
 import { CaseFilePanel } from './components/CaseFilePanel'
+import { DialogueBox } from './components/DialogueBox'
 import { QueryEditor } from './components/QueryEditor'
 import { ResultsGrid } from './components/ResultsGrid'
 import { SchemaPanel } from './components/SchemaPanel'
+import { Window } from './components/Window'
 import { STAGES, type Stage } from './game/case'
 import { useCaseFile } from './game/useCaseFile'
 
-type Tab = 'case' | 'schema'
+type Tab = 'case' | 'records'
+
+const TABS: ReadonlyArray<readonly [Tab, string]> = [
+  ['case', 'Case file'],
+  ['records', 'Records'],
+]
+
+function Shell({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="desk grid h-full place-items-center px-6">
+      <div className="max-w-md text-center">
+        <p className="font-mono text-[10px] font-medium tracking-[0.3em] text-brass-500 uppercase">
+          Marrowgate City Constabulary
+        </p>
+        <h1 className="mt-4 font-display text-3xl leading-tight font-bold text-ink-100">{title}</h1>
+        <span className="mx-auto mt-5 block h-px w-16 bg-brass-600/60" />
+        <p className="mt-5 font-typed text-[13px] leading-relaxed text-ink-500">{body}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   const caseFile = useCaseFile()
@@ -26,64 +48,73 @@ export default function App() {
   const dialogStage = accusing ?? activeStage
   const dialogSeal = seals.find((seal) => seal.stage === dialogStage)
   const allSolved = STAGES.every((stage) => solved[stage])
+  const totalRecords = useMemo(
+    () => caseFile.schema.reduce((sum, table) => sum + table.rowCount, 0),
+    [caseFile.schema],
+  )
 
   if (caseFile.status !== 'ready') {
-    return (
-      <div className="grid h-full place-items-center px-6 text-center">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-brass-500">
-            Marrowgate Constabulary
-          </p>
-          <h1 className="mt-3 text-2xl font-semibold text-ink-200">
-            {caseFile.status === 'failed' ? 'The case file will not open' : 'Opening the case file…'}
-          </h1>
-          <p className="mt-2 max-w-sm text-sm text-ink-600">
-            {caseFile.status === 'failed'
-              ? caseFile.loadError
-              : 'Loading three megabytes of Marrowgate into SQLite.'}
-          </p>
-        </div>
-      </div>
+    return caseFile.status === 'failed' ? (
+      <Shell
+        title="The case file will not open"
+        body={caseFile.loadError ?? 'Unknown error.'}
+      />
+    ) : (
+      <Shell
+        title="Opening the case file"
+        body="Three megabytes of Marrowgate, loading into SQLite."
+      />
     )
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/10 bg-ink-900/70 px-4 py-3">
-        <div>
-          <h1 className="text-[15px] font-semibold tracking-tight text-ink-200">
+    <div className="desk flex h-full flex-col">
+      <header className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 border-b border-ink-850 px-5 py-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-display text-[19px] leading-none font-bold tracking-tight text-ink-100">
             The Marrowgate Ledger
           </h1>
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-600">
-            Case 1114-OH · Old Harbour
-          </p>
+          <span className="hidden font-mono text-[10px] tracking-[0.2em] text-ink-600 uppercase sm:inline">
+            A SQL murder mystery
+          </span>
         </div>
 
-        <ol className="ml-2 flex items-center gap-1.5">
-          {STAGES.map((stage, index) => (
-            <li
-              key={stage}
-              title={stage === 'killer' ? 'Act I' : 'Act II'}
-              className={`h-1.5 w-8 rounded-full ${
-                solved[stage]
-                  ? 'bg-brass-500'
-                  : stage === activeStage
-                    ? 'bg-brass-500/35'
-                    : 'bg-white/10'
-              }`}
-            >
-              <span className="sr-only">
-                Act {index + 1} {solved[stage] ? 'solved' : 'unsolved'}
-              </span>
-            </li>
-          ))}
+        <ol className="flex items-center gap-1.5">
+          {STAGES.map((stage, index) => {
+            const isSolved = Boolean(solved[stage])
+            const isActive = stage === activeStage && !isSolved
+            return (
+              <li
+                key={stage}
+                className={`rounded-sm border px-2 py-1 font-mono text-[9.5px] font-medium tracking-[0.16em] uppercase transition-colors duration-300 ${
+                  isSolved
+                    ? 'border-brass-600/50 bg-brass-500/12 text-brass-400'
+                    : isActive
+                      ? 'border-ink-700 bg-ink-900 text-ink-300'
+                      : 'border-ink-850 text-ink-700'
+                }`}
+              >
+                Act {index === 0 ? 'I' : 'II'}
+                <span className="ml-1.5 text-[8.5px]">
+                  {isSolved ? 'charged' : isActive ? 'open' : 'sealed'}
+                </span>
+              </li>
+            )
+          })}
         </ol>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={caseFile.replayBriefing}
+            className="cursor-pointer rounded-sm px-3 py-1.5 font-mono text-[10px] font-medium tracking-[0.14em] text-ink-600 uppercase transition-colors duration-200 hover:text-ink-300"
+          >
+            Briefing
+          </button>
           <button
             type="button"
             onClick={caseFile.reset}
-            className="rounded-md px-3 py-1.5 text-[11.5px] font-medium text-ink-600 transition hover:text-ink-200"
+            className="cursor-pointer rounded-sm px-3 py-1.5 font-mono text-[10px] font-medium tracking-[0.14em] text-ink-600 uppercase transition-colors duration-200 hover:text-ink-300"
           >
             Start over
           </button>
@@ -91,38 +122,39 @@ export default function App() {
             type="button"
             onClick={() => setAccusing(activeStage)}
             disabled={allSolved}
-            className="rounded-md border border-blood-500/45 bg-blood-500/15 px-3.5 py-1.5 text-[12px] font-semibold text-blood-500 transition hover:bg-blood-500/25 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-transparent disabled:text-ink-700"
+            className="cursor-pointer rounded-sm border border-stamp-500/55 px-3.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.14em] text-stamp-500 uppercase transition-colors duration-200 hover:border-stamp-500 hover:bg-stamp-500/12 disabled:cursor-not-allowed disabled:border-ink-850 disabled:bg-transparent disabled:text-ink-700"
           >
-            {allSolved ? 'Case closed' : 'Make an accusation'}
+            {allSolved ? 'Case closed' : 'Name a suspect'}
           </button>
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="flex max-h-[40vh] min-h-0 w-full shrink-0 flex-col border-b border-white/10 lg:max-h-none lg:w-84 lg:border-b-0 lg:border-r">
-          <nav className="flex shrink-0 gap-1 border-b border-white/10 px-3 py-2">
-            {(
-              [
-                ['case', 'Case file'],
-                ['schema', 'Database'],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition ${
-                  tab === key
-                    ? 'bg-white/[0.08] text-ink-200'
-                    : 'text-ink-600 hover:text-ink-400'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
+        {/* The dossier: a paper sheet laid on the desk, with folder tabs. */}
+        <aside className="flex max-h-[46vh] min-h-0 w-full shrink-0 flex-col lg:max-h-none lg:w-[25.5rem]">
+          <div role="tablist" className="flex shrink-0 items-end gap-0.5 px-4 pt-2">
+            {TABS.map(([key, label]) => {
+              const selected = tab === key
+              return (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={selected}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={`cursor-pointer rounded-t-md px-3.5 pt-1.5 pb-2 font-mono text-[10px] font-medium tracking-[0.16em] uppercase transition-colors duration-200 ${
+                    selected
+                      ? 'bg-paper-100 text-paper-900'
+                      : 'bg-ink-900 text-ink-600 hover:bg-ink-850 hover:text-ink-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
 
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div className="paper min-h-0 min-w-0 flex-1 overflow-auto shadow-[0_-1px_24px_oklch(0_0_0/0.45)]">
             {tab === 'case' ? (
               <CaseFilePanel
                 hints={caseFile.hints}
@@ -142,22 +174,67 @@ export default function App() {
           </div>
         </aside>
 
-        <main className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(9rem,32%)_1fr]">
-          <QueryEditor
-            value={caseFile.sql}
-            onChange={caseFile.setSql}
-            onRun={caseFile.run}
-            onCancel={caseFile.cancel}
-            running={caseFile.running}
-            schema={caseFile.schema}
-          />
-          <ResultsGrid
-            result={caseFile.result}
-            error={caseFile.queryError}
-            running={caseFile.running}
-          />
+        {/* The terminal, as a window on the desk. */}
+        <main className="min-h-0 min-w-0 flex-1 p-3 sm:p-4">
+          <Window
+            title="sqlite3 — marrowgate.db"
+            subtitle={`${totalRecords.toLocaleString()} records · read-only`}
+            className="h-full"
+            actions={
+              <>
+                <span className="mr-1 hidden items-center gap-1 sm:flex">
+                  <kbd className="rounded border border-ink-700 bg-ink-950 px-1.5 py-px font-mono text-[10px] text-ink-500">
+                    ⌘
+                  </kbd>
+                  <kbd className="rounded border border-ink-700 bg-ink-950 px-1.5 py-px font-mono text-[10px] text-ink-500">
+                    ↵
+                  </kbd>
+                </span>
+                {caseFile.running ? (
+                  <button
+                    type="button"
+                    onClick={caseFile.cancel}
+                    className="cursor-pointer rounded-md border border-stamp-500/50 bg-stamp-500/12 px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em] text-stamp-500 uppercase transition-colors duration-200 hover:bg-stamp-500/22 active:scale-[0.98]"
+                  >
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={caseFile.run}
+                    className="cursor-pointer rounded-md bg-brass-500 px-3.5 py-1 font-mono text-[10px] font-semibold tracking-[0.12em] text-ink-950 uppercase transition-all duration-200 hover:bg-brass-400 active:scale-[0.98]"
+                  >
+                    Run
+                  </button>
+                )}
+              </>
+            }
+          >
+            <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(7.5rem,34%)_1fr]">
+              <QueryEditor
+                value={caseFile.sql}
+                onChange={caseFile.setSql}
+                onRun={caseFile.run}
+                schema={caseFile.schema}
+              />
+              <ResultsGrid
+                result={caseFile.result}
+                error={caseFile.queryError}
+                running={caseFile.running}
+              />
+            </div>
+          </Window>
         </main>
       </div>
+
+      {caseFile.dialogue ? (
+        <DialogueBox
+          // Remounting per scene resets the typewriter without an effect.
+          key={caseFile.dialogue.id}
+          lines={caseFile.dialogue.lines}
+          onDismiss={caseFile.dismissDialogue}
+        />
+      ) : null}
 
       {dialogSeal ? (
         <AccusationDialog

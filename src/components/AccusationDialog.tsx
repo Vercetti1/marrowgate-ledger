@@ -9,21 +9,27 @@ interface Props {
   onSubmit: (stage: Stage, guess: string) => Promise<boolean>
 }
 
-type Verdict = 'idle' | 'checking' | 'wrong' | 'correct'
-
+/**
+ * The charge sheet only *takes* the name.
+ *
+ * Whether the charge sticks is delivered by Insp. Vance in the dialogue box, so
+ * the outcome has one home instead of two competing ones — and a native
+ * <dialog> lives in the top layer, so anything it reported would have covered
+ * the scene playing underneath it anyway.
+ */
 export function AccusationDialog({ stage, prompt, open, onClose, onSubmit }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [guess, setGuess] = useState('')
-  const [verdict, setVerdict] = useState<Verdict>('idle')
+  const [filing, setFiling] = useState(false)
 
-  // Native <dialog> gives us focus trapping, Esc-to-close and inert backdrop
+  // Native <dialog> gives us focus trapping, Esc-to-close and an inert backdrop
   // for free, so it only needs opening and closing imperatively.
   useEffect(() => {
     const element = dialog.current
     if (!element) return
     if (open && !element.open) {
       setGuess('')
-      setVerdict('idle')
+      setFiling(false)
       element.showModal()
     } else if (!open && element.open) {
       element.close()
@@ -32,68 +38,61 @@ export function AccusationDialog({ stage, prompt, open, onClose, onSubmit }: Pro
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!guess.trim() || verdict === 'checking') return
-    setVerdict('checking')
-    const correct = await onSubmit(stage, guess)
-    setVerdict(correct ? 'correct' : 'wrong')
+    if (!guess.trim() || filing) return
+    setFiling(true)
+    await onSubmit(stage, guess)
+    // Close either way; the scene that follows says how it went.
+    dialog.current?.close()
   }
 
   return (
     <dialog
       ref={dialog}
       onClose={onClose}
-      className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-ink-900 p-0 text-ink-200 shadow-2xl backdrop:bg-ink-950/75 backdrop:backdrop-blur-sm"
+      className="paper m-auto w-[min(29rem,calc(100vw-2rem))] rounded-sm p-0 shadow-[0_30px_70px_-12px_oklch(0_0_0/0.7)] backdrop:bg-ink-950/70 backdrop:backdrop-blur-[3px]"
     >
-      <form onSubmit={handleSubmit} className="p-6">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brass-400">
-          Formal accusation
-        </h2>
-        <p className="mt-2 text-[15px] leading-relaxed">{prompt}</p>
+      <form onSubmit={handleSubmit} className="px-7 py-6">
+        <div className="mb-4 border-b-2 border-paper-900/70 pb-3">
+          <p className="font-mono text-[9.5px] font-medium tracking-[0.26em] text-paper-600 uppercase">
+            Form 9 · Charge sheet
+          </p>
+          <h2 className="mt-1.5 font-display text-[22px] leading-tight font-bold text-paper-900">
+            {prompt}
+          </h2>
+        </div>
 
-        <label className="mt-5 block">
-          <span className="mb-1.5 block text-[11px] uppercase tracking-wider text-ink-600">
-            Full name
+        <label className="block">
+          <span className="mb-2 block font-mono text-[10px] font-medium tracking-[0.2em] text-paper-600 uppercase">
+            Name of the accused
           </span>
           <input
             autoFocus
             value={guess}
-            onChange={(event) => {
-              setGuess(event.target.value)
-              if (verdict !== 'checking') setVerdict('idle')
-            }}
-            placeholder="e.g. Silas Renwick"
-            className="w-full rounded-lg border border-white/15 bg-ink-950 px-3 py-2.5 font-mono text-[13.5px] text-ink-200 outline-none transition placeholder:text-ink-700 focus:border-brass-500/70"
+            onChange={(event) => setGuess(event.target.value)}
+            placeholder="As it appears in the register"
+            className="w-full border-0 border-b-2 border-paper-400 bg-transparent px-0.5 pb-1.5 font-typed text-[16px] text-paper-900 outline-none transition-colors placeholder:text-paper-400 focus:border-stamp-500"
           />
         </label>
 
-        {verdict === 'wrong' ? (
-          <p className="mt-3 text-[13px] text-blood-500">
-            That is not your killer. Go back to the evidence.
-          </p>
-        ) : null}
-        {verdict === 'correct' ? (
-          <p className="mt-3 text-[13px] text-brass-400">
-            Charged. The case file has been updated — close this and read on.
-          </p>
-        ) : null}
+        <p className="mt-3 font-typed text-[12.5px] leading-relaxed text-paper-600 italic">
+          A charge cannot be withdrawn quietly. Be sure of the record first.
+        </p>
 
-        <div className="mt-6 flex items-center justify-end gap-2">
+        <div className="mt-5 flex items-center justify-end gap-1">
           <button
             type="button"
             onClick={() => dialog.current?.close()}
-            className="rounded-md px-3.5 py-2 text-[12.5px] font-medium text-ink-400 transition hover:text-ink-200"
+            className="cursor-pointer rounded-sm px-3.5 py-2 font-mono text-[10.5px] font-medium tracking-[0.14em] text-paper-600 uppercase transition-colors duration-200 hover:text-paper-900"
           >
-            {verdict === 'correct' ? 'Continue' : 'Cancel'}
+            Cancel
           </button>
-          {verdict === 'correct' ? null : (
-            <button
-              type="submit"
-              disabled={!guess.trim() || verdict === 'checking'}
-              className="rounded-md bg-brass-500 px-4 py-2 text-[12.5px] font-semibold text-ink-950 transition hover:bg-brass-400 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {verdict === 'checking' ? 'Checking…' : 'Charge them'}
-            </button>
-          )}
+          <button
+            type="submit"
+            disabled={!guess.trim() || filing}
+            className="cursor-pointer rounded-sm bg-stamp-500 px-4 py-2 font-mono text-[10.5px] font-semibold tracking-[0.14em] text-paper-50 uppercase transition-all duration-200 hover:bg-stamp-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-paper-400 disabled:text-paper-100"
+          >
+            {filing ? 'Filing…' : 'Sign the charge'}
+          </button>
         </div>
       </form>
     </dialog>

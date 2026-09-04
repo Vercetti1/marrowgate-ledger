@@ -2,9 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CaseDatabase, QueryCancelled } from '../lib/db'
 import type { QueryResult, TableSchema } from '../lib/db-protocol'
 import { accuse, loadHints, loadSeals, OPENING_QUERY, type Hint, type Seal, type Stage } from './case'
+import {
+  AFTER_CONFESSION,
+  BEFORE_EPILOGUE,
+  CLOSING,
+  HANDOVER_TO_ACT_TWO,
+  OPENING,
+  toLines,
+  WRONG_ACCUSATION,
+  type Line,
+} from './dialogue'
 
 const PROGRESS_KEY = 'marrowgate.progress.v1'
 const DRAFT_KEY = 'marrowgate.draft.v1'
+const BRIEFED_KEY = 'marrowgate.briefed.v1'
 
 /** Accepted answers, keyed by stage. Enough to restore everything else. */
 type Progress = Partial<Record<Stage, string>>
@@ -24,6 +35,12 @@ function writeStored(key: string, value: unknown): void {
   } catch {
     // Private windows and blocked site data are fine; progress is a convenience.
   }
+}
+
+/** A scene carries an id so the dialogue box can be reset by remounting. */
+export interface Scene {
+  id: number
+  lines: Line[]
 }
 
 export interface QueryFailure {
@@ -48,6 +65,10 @@ export interface CaseFile {
 
   solved: Progress
   revealed: Partial<Record<Stage, string>>
+  /** The scene currently playing in the dialogue box, if any. */
+  dialogue: Scene | null
+  dismissDialogue: () => void
+  replayBriefing: () => void
   submitAccusation: (stage: Stage, guess: string) => Promise<boolean>
   revealedHints: Partial<Record<Stage, number>>
   revealNextHint: (stage: Stage) => void
@@ -72,6 +93,14 @@ export function useCaseFile(): CaseFile {
   const [solved, setSolved] = useState<Progress>({})
   const [revealed, setRevealed] = useState<Partial<Record<Stage, string>>>({})
   const [revealedHints, setRevealedHints] = useState<Partial<Record<Stage, number>>>({})
+  const [dialogue, setDialogue] = useState<Scene | null>(null)
+  const nextSceneId = useRef(1)
+  /** Rotates the rebuke so a stuck player isn't told the same thing twice. */
+  const wrongAttempts = useRef<Record<string, number>>({})
+
+  const playScene = useCallback((lines: Line[]) => {
+    setDialogue({ id: nextSceneId.current++, lines })
+  }, [])
 
   useEffect(() => {
     // React re-runs effects in development; one worker is plenty.
@@ -101,12 +130,19 @@ export function useCaseFile(): CaseFile {
         setSolved(confirmed)
         setRevealed(restored)
         setStatus('ready')
+
+        // The briefing plays once, and never over a case already in progress.
+        if (!confirmed.killer && !readStored(BRIEFED_KEY, false)) {
+          writeStored(BRIEFED_KEY, true)
+          playScene(OPENING)
+        }
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error))
         setStatus('failed')
       }
     })()
-  }, [])
+    // playScene is stable; the booted ref is what actually keeps this to one run.
+  }, [playScene])
 
   useEffect(() => {
     writeStored(DRAFT_KEY, sql)
@@ -144,7 +180,14 @@ export function useCaseFile(): CaseFile {
       const db = database.current
       if (!db) return false
       const outcome = await accuse(db, stage, guess)
-      if (!outcome.correct) return false
+
+      if (!outcome.correct) {
+        const options = WRONG_ACCUSATION[stage]
+        const attempt = wrongAttempts.current[stage] ?? 0
+        wrongAttempts.current[stage] = attempt + 1
+        playScene(options[attempt % options.length]!)
+        return false
+      }
 
       setSolved((previous) => {
         const next = { ...previous, [stage]: guess }
@@ -154,18 +197,30 @@ export function useCaseFile(): CaseFile {
       setRevealed((previous) => ({ ...previous, [stage]: outcome.revealed }))
       // The confession is new evidence: surface the row count immediately.
       setSchema(await db.refreshSchema())
+
+      // The reveal is a scene, not a sidebar update.
+      const prose = outcome.revealed ?? ''
+      playScene(
+        stage === 'killer'
+          ? [...HANDOVER_TO_ACT_TWO, ...toLines('vole', prose), ...AFTER_CONFESSION]
+          : [...BEFORE_EPILOGUE, ...toLines('file', prose), ...CLOSING],
+      )
       return true
     },
-    [],
+    [playScene],
   )
 
   const revealNextHint = useCallback((stage: Stage) => {
     setRevealedHints((previous) => ({ ...previous, [stage]: (previous[stage] ?? 0) + 1 }))
   }, [])
 
+  const dismissDialogue = useCallback(() => setDialogue(null), [])
+  const replayBriefing = useCallback(() => playScene(OPENING), [playScene])
+
   const reset = useCallback(() => {
     writeStored(PROGRESS_KEY, {})
     writeStored(DRAFT_KEY, OPENING_QUERY)
+    writeStored(BRIEFED_KEY, false)
     location.reload()
   }, [])
 
@@ -184,6 +239,9 @@ export function useCaseFile(): CaseFile {
     queryError,
     solved,
     revealed,
+    dialogue,
+    dismissDialogue,
+    replayBriefing,
     submitAccusation,
     revealedHints,
     revealNextHint,
